@@ -20,6 +20,9 @@ class DevelopmentConfig(Config):
     DEBUG = True
 
     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:1@192.168.0.202:3306/its'
+    SQLALCHEMY_BINDS = {
+        'bbs': 'mysql+pymysql://root:1@192.168.0.202:3306/bbs'
+    }
 
 
 config = {

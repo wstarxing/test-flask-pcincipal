@@ -1,17 +1,12 @@
 # coding=utf-8
-__author__ = "AllenCHM"
-
-from datetime import datetime
-import hashlib
+import random, string, os, datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, URLSafeTimedSerializer
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
-from flask import current_app, request, url_for
-from flask_login import UserMixin, AnonymousUserMixin
-from app import db, login_manager
-import datetime
+from flask import current_app
+from flask_login import UserMixin
 
-import random, string, os
+from app import login_manager, db
 
 
 def random_str(randomlength=8):  # 生成随机apikey
@@ -20,10 +15,19 @@ def random_str(randomlength=8):  # 生成随机apikey
     return ''.join(map(lambda xx: (hex(ord(xx))[2:]), os.urandom(16)))
 
 
-user_auth_relationships = db.Table(u'user_auth_relationships',
-                                   db.Column(u'user_id', db.Integer, db.ForeignKey(u'T_user.its_id')),  # 对应用户id
-                                   db.Column(u'auth_id', db.Integer, db.ForeignKey(u'auth.id')),  # 对应认证id
-                                   )
+users_roles = db.Table(u'users_roles',
+                            db.Column(u'user_id', db.Integer, db.ForeignKey(u'T_user.its_id')),  # 对应用户id
+                            db.Column(u'role_id', db.Integer, db.ForeignKey(u'roles.id')),  # 对应角色id
+                        )
+
+
+class Role(db.Model):
+    """Represents Proected roles."""
+    __tablename__ = 'roles'
+
+    id = db.Column(db.String(45), primary_key=True)
+    name = db.Column(db.String(255), unique=True)
+    description = db.Column(db.String(255))
 
 
 class User(UserMixin, db.Model):  # User表映射
@@ -43,6 +47,12 @@ class User(UserMixin, db.Model):  # User表映射
     api_key = db.Column(db.String, default=random_str(8))
     bbs_signature = db.Column(db.String(100))
 
+    posts = db.relationship('Posts', backref=db.backref('userposts'))
+
+    roles = db.relationship(
+        'Role',
+        secondary=users_roles,
+        backref=db.backref('user', lazy='dynamic'))
 
     def is_authenticated(self):
         return True
@@ -101,3 +111,14 @@ class Feedback(db.Model):
 
     def __repr__(self):
         return self.status
+
+
+class Posts(db.Model):  # 主贴
+    __tablename__ = 'posts'
+    __bind_key__ = 'bbs'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主键
+
+    uuid = db.Column(db.Integer, db.ForeignKey('T_user.its_id'))
+
+

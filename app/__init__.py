@@ -4,12 +4,11 @@ from flask import Flask
 # plugin
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, logout_user, \
-     login_required, current_user
-from flask_principal import Principal, Identity, AnonymousIdentity, \
-     identity_changed,identity_loaded,UserNeed,RoleNeed
+from flask_login import LoginManager, current_user
+from flask_principal import Principal, identity_loaded, UserNeed, RoleNeed
 # config
 from config import config
+
 
 principals = Principal()
 login_manager = LoginManager()
@@ -28,6 +27,8 @@ def create_app(config_name):
     db.init_app(app)
     session.init_app(app)
 
+    from app.main.principalsource import EditBlogPostNeed
+
     @identity_loaded.connect_via(app)
     def on_identity_loaded(sender, identity):
         identity.user = current_user
@@ -35,9 +36,13 @@ def create_app(config_name):
         if hasattr(current_user, 'its_id'):
             identity.provides.add(UserNeed(current_user.its_id))
 
-        if hasattr(current_user, 'bbs_signature'):
-            identity.provides.add(RoleNeed(current_user.bbs_signature))
+        if hasattr(current_user, 'roles'):
+            for i in current_user.roles:
+                identity.provides.add(RoleNeed(i.name))
 
+        if hasattr(current_user, 'posts'):
+            for post in current_user.posts:
+                identity.provides.add(EditBlogPostNeed(unicode(post.id)))
 
     from app.main import main as main_blueprint
     app.register_blueprint(main_blueprint)
