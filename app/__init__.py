@@ -44,8 +44,8 @@ def create_app(config_name):
             for post in current_user.posts:
                 identity.provides.add(EditBlogPostNeed(unicode(post.id)))
 
-    from app.main import main as main_blueprint
-    app.register_blueprint(main_blueprint)
+    from app.main import main
+    app.register_blueprint(main)
 
     return app
 

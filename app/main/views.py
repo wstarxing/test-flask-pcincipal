@@ -72,6 +72,7 @@ def logout():
 @main.route('/userinfo', methods=['GET'])
 @login_required
 def userinfo():
+    print session
     return jsonify({'id': current_user.its_id,
                     'name': current_user.its_username,
                     'role': current_user.bbs_signature
@@ -83,6 +84,7 @@ def userroles():
     role_list = []
     for role in current_user.roles:
         role_list.append(role.name)
+
     return jsonify({'role': role_list})
 
 
